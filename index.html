@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Chicken Road 2 - Official Edition</title>
+  <style>
+    :root {
+      --bg-dark: #121418;
+      --card-dark: #22262c;
+      --border-color: #2d333b;
+      --accent-green: #00c853;
+      --accent-green-hover: #00e676;
+      --accent-gold: #ffb300;
+      --accent-red: #ff3344;
+      --asphalt-gray: #45484e;
+      --text-gray: #8c939e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
+    body { background: #000; color: #fff; display: flex; justify-content: center; min-height: 100vh; }
+    
+    .game-wrapper {
+      width: 100%; max-width: 440px; min-height: 100vh; background: var(--bg-dark);
+      display: flex; flex-direction: column; position: relative; border-left: 1px solid #2d3239; border-right: 1px solid #2d3239; overflow: hidden;
+    }
+
+    /* 1. Top Navigation */
+    .top-nav {
+      display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: #0c0e12; border-bottom: 1px solid #1c1f26; z-index: 50;
+    }
+    .top-left { display: flex; align-items: center; gap: 8px; }
+    .back-btn { font-size: 16px; cursor: pointer; color: #fff; background: none; border: none; display: flex; align-items: center; }
+    .user-avatar-badge { width: 24px; height: 24px; border-radius: 50%; background: #1c1f26; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold; border: 1px solid #2d3239; }
+    
+    .top-right { display: flex; align-items: center; gap: 6px; }
+    .curr-box { background: #000; border: 1px solid #232736; border-radius: 4px; padding: 3px 8px; display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: bold; cursor: pointer; }
+    .curr-icon { width: 14px; height: 14px; border-radius: 50%; background: #007799; font-size: 8px; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+    .dep-btn { background: #ffb300; color: #000; font-weight: 800; font-size: 11px; border: none; border-radius: 4px; padding: 5px 10px; cursor: pointer; }
+
+    /* 2. Chicken Road Header */
+    .brand-header {
+      display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: #121418; border-bottom: 1px solid #1c1f26; z-index: 50;
+    }
+    .chicken-logo { font-size: 18px; font-weight: 900; color: #fff; letter-spacing: -0.5px; display: flex; align-items: center; gap: 3px; }
+    .chicken-logo span { color: #ff3344; font-size: 20px; font-style: italic; }
+    .bal-pill { background: #1c1f26; border: 1px solid #2d3239; border-radius: 12px; padding: 3px 10px; font-size: 12px; font-weight: 900; }
+    .header-icons-right { display: flex; gap: 10px; color: var(--text-gray); font-size: 16px; cursor: pointer; align-items: center; }
+
+    /* 3. Road Scene Visual Arena */
+    .road-arena {
+      flex: 1; min-height: 380px; background: var(--asphalt-gray); position: relative; overflow-x: auto; overflow-y: hidden; display: flex; scrollbar-width: none;
+    }
+    .road-arena::-webkit-scrollbar { display: none; }
+
+    /* Sidewalk Start Area */
+    .sidewalk-start {
+      width: 100px; height: 100%; background: #9e9fa4; border-right: 4px solid #7a7b80; position: relative; flex-shrink: 0; padding-left: 8px; display: flex; flex-direction: column; justify-content: space-around; z-index: 10;
+    }
+    .bush { width: 48px; height: 48px; border-radius: 50%; background: #4caf50; border: 3px solid #2e7d32; }
+    .street-lamp {
+      position: absolute; top: 15px; left: 45px; width: 45px; height: 90px;
+    }
+    .lamp-pole { width: 8px; height: 80px; background: #607d8b; border-radius: 4px; position: absolute; left: 10px; }
+    .lamp-head { width: 35px; height: 16px; background: #455a64; border-radius: 8px 8px 0 0; position: absolute; top: 0; left: 0; }
+    .lamp-light {
+      position: absolute; top: 14px; left: -10px; width: 60px; height: 60px; background: radial-gradient(circle, rgba(255,235,59,0.35) 0%, rgba(255,235,59,0) 70%); border-radius: 50%; pointer-events: none;
+    }
+
+    /* Live Animated Canvas for Real Traffic & Road Lines */
+    #roadCanvas { position: absolute; top: 0; left: 100px; width: 680px; height: 100%; z-index: 15; pointer-events: none; }
+
+    /* Chicken Character (Vector SVG) */
+    .chicken-sprite {
+      width: 54px; height: 54px; position: absolute; top: 160px; left: 22px; z-index: 30; transition: all 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .chicken-sprite.waddle { animation: waddleAnim 0.2s infinite alternate; }
+
+    /* Highway Manhole Step Targets */
+    .highway-strip { display: flex; height: 100%; position: relative; padding-left: 100px; padding-right: 80px; z-index: 20; }
+    .lane-block { width: 85px; height: 100%; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+
+    .manhole-step {
+      width: 68px; height: 68px; border-radius: 50%; background: radial-gradient(circle, #686c75 0%, #36383d 100%);
+      border: 3px solid #2a2c30; box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 10px rgba(0,0,0,0.6);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
+    }
+    .manhole-step.active-step {
+      border-color: var(--accent-green); box-shadow: 0 0 16px var(--accent-green); animation: pulseStep 0.8s infinite alternate;
+    }
+    .manhole-step.passed { background: radial-gradient(circle, #2e7d32 0%, #1b5e20 100%); border-color: #4caf50; }
+    .manhole-mult-text { font-size: 13px; font-weight: 900; color: #fff; text-shadow: 0 1px 2px #000; }
+    .manhole-grate-lines { width: 34px; height: 2px; background: #26272b; margin-top: 3px; border-radius: 2px; }
+
+    /* 4. Controls Panel */
+    .controls-panel {
+      background: #202328; border-top: 1px solid #2d3239; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; z-index: 50;
+    }
+    .stepper-row {
+      display: flex; align-items: center; justify-content: space-between; background: #2c3037; border-radius: 6px; padding: 4px;
+    }
+    .btn-limit { background: #373c45; border: none; color: #fff; font-size: 11px; font-weight: 900; padding: 8px 14px; border-radius: 4px; cursor: pointer; }
+    .bet-amount-display { font-size: 18px; font-weight: 900; color: #fff; text-align: center; }
+
+    .quick-chips-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+    .chip-btn {
+      background: #2c3037; border: 1px solid #373c45; border-radius: 6px; padding: 8px 0; color: #fff; font-size: 12px; font-weight: 800; text-align: center; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px;
+    }
+    .chip-btn:hover { background: #373c45; }
+    .etb-badge { background: #4a505c; border-radius: 50%; font-size: 8px; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; }
+
+    /* Difficulty Selector Dropdown */
+    .diff-selector-box { position: relative; }
+    .diff-btn {
+      width: 100%; background: #2c3037; border: 1px solid #373c45; border-radius: 6px; padding: 10px 14px; color: #fff; font-size: 13px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+    }
+    .diff-dropdown-menu {
+      display: none; position: absolute; bottom: 100%; left: 0; right: 0; background: #2c3037; border: 1px solid #3d434d; border-radius: 6px; overflow: hidden; margin-bottom: 4px; box-shadow: 0 -8px 20px rgba(0,0,0,0.6); z-index: 60;
+    }
+    .diff-option {
+      padding: 10px 14px; font-size: 13px; font-weight: bold; color: #ddd; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #373c45;
+    }
+    .diff-option:hover { background: #373c45; color: #fff; }
+    .diff-option.selected { color: var(--accent-gold); }
+
+    /* Main Play / Cash Out Button */
+    .play-btn {
+      width: 100%; background: var(--accent-green); color: #fff; font-size: 20px; font-weight: 900; border: none; border-radius: 8px; padding: 14px 0; cursor: pointer; transition: 0.15s; letter-spacing: 0.5px;
+    }
+    .play-btn:hover { background: var(--accent-green-hover); }
+    .play-btn.cashout {
+      background: var(--accent-gold); color: #000; animation: pulsePlay 0.8s infinite alternate;
+    }
+
+    /* Toast Container */
+    #toastContainer {
+      position: fixed; top: 15px; left: 50%; transform: translateX(-50%); z-index: 9999;
+      display: flex; flex-direction: column; gap: 6px; width: 90%; max-width: 360px; pointer-events: none;
+    }
+    .app-toast {
+      background: #111b24; border: 1px solid var(--accent-green); color: #fff; padding: 10px 14px;
+      border-radius: 8px; font-size: 12px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+      display: flex; align-items: center; gap: 8px; animation: toastSlide 0.25s ease-out; pointer-events: auto;
+    }
+    .app-toast.error { border-color: #ff3344; }
+
+    @keyframes pulseStep { 0% { transform: scale(1); } 100% { transform: scale(1.08); } }
+    @keyframes pulsePlay { 0% { transform: scale(0.99); } 100% { transform: scale(1.02); } }
+    @keyframes waddleAnim { 0% { transform: rotate(-6deg); } 100% { transform: rotate(6deg); } }
+    @keyframes toastSlide { 0% { transform: translateY(-10px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body>
+
+<div class="game-wrapper">
+  <!-- Toast Container -->
+  <div id="toastContainer"></div>
+
+  <!-- 1. Top Navigation -->
+  <div class="top-nav">
+    <div class="top-left">
+      <button class="back-btn" onclick="history.back()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      </button>
+      <div class="user-avatar-badge">H</div>
+    </div>
+    <div class="top-right">
+      <div class="curr-box" onclick="toggleBalVisibility()">
+        <div class="curr-icon">Br</div>
+        <span id="balHideText">••••••</span>
+        <span style="font-size:10px; color:var(--text-gray);">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </span>
+      </div>
+      <button class="dep-btn" onclick="showToast('Open Wallet in Main Hub')">Deposit</button>
+    </div>
+  </div>
+
+  <!-- 2. Chicken Road Header -->
+  <div class="brand-header">
+    <div class="chicken-logo">CHICKEN <span>2</span> ROAD</div>
+    <div class="bal-pill"><span id="userBalText">1000.54</span> ETB</div>
+    <div class="header-icons-right">
+      <span id="soundIcon" onclick="toggleGlobalAudio()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      </span>
+      <span onclick="showToast('Avoid oncoming traffic to cash out!')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+      </span>
+    </div>
+  </div>
+
+  <!-- 3. Road Scene Visual Area -->
+  <div class="road-arena" id="roadArenaScroll">
+    <!-- Live Canvas for Moving Traffic -->
+    <canvas id="roadCanvas" width="680" height="380"></canvas>
+
+    <!-- Sidewalk Start -->
+    <div class="sidewalk-start">
+      <div class="bush"></div>
+      <div class="street-lamp">
+        <div class="lamp-pole"></div>
+        <div class="lamp-head"></div>
+        <div class="lamp-light"></div>
+      </div>
+      <div class="bush"></div>
+    </div>
+
+    <!-- Chicken Character (SVG) -->
+    <div class="chicken-sprite" id="chickenPlayer">
+      <svg viewBox="0 0 100 100" width="100%" height="100%">
+        <ellipse cx="45" cy="55" rx="35" ry="30" fill="#ffffff" stroke="#d5d5d5" stroke-width="3"/>
+        <path d="M40,25 Q35,10 48,18 Q55,8 60,22 Z" fill="#ff3344"/>
+        <circle cx="55" cy="35" r="9" fill="#fff" stroke="#333" stroke-width="2"/><circle cx="58" cy="35" r="4" fill="#000"/>
+        <circle cx="70" cy="38" r="7" fill="#fff" stroke="#333" stroke-width="2"/><circle cx="72" cy="38" r="3" fill="#000"/>
+        <polygon points="68,42 85,48 68,54" fill="#ffb300" stroke="#e65100" stroke-width="1.5"/>
+        <ellipse cx="65" cy="56" rx="5" ry="8" fill="#ff3344"/>
+        <ellipse cx="35" cy="58" rx="16" ry="12" fill="#f0f0f0" stroke="#ccc" stroke-width="2"/>
+        <path d="M35,82 L35,92 M30,92 L40,92 M50,82 L50,92 M45,92 L55,92" stroke="#ffb300" stroke-width="4" stroke-linecap="round"/>
+      </svg>
+    </div>
+
+    <!-- 8 Highway Lanes with Manholes -->
+    <div class="highway-strip" id="highwayStrip"></div>
+  </div>
+
+  <!-- 4. Controls Panel -->
+  <div class="controls-panel">
+    <!-- Stepper Row -->
+    <div class="stepper-row">
+      <button class="btn-limit" onclick="setBet(4)">MIN</button>
+      <div class="bet-amount-display" id="betDisplayVal">4</div>
+      <button class="btn-limit" onclick="setBet(100)">MAX</button>
+    </div>
+
+    <!-- Quick Chips Row -->
+    <div class="quick-chips-row">
+      <div class="chip-btn" onclick="setBet(4)">4 <span class="etb-badge">ETB</span></div>
+      <div class="chip-btn" onclick="setBet(8)">8 <span class="etb-badge">ETB</span></div>
+      <div class="chip-btn" onclick="setBet(12)">12 <span class="etb-badge">ETB</span></div>
+      <div class="chip-btn" onclick="setBet(20)">20 <span class="etb-badge">ETB</span></div>
+    </div>
+
+    <!-- Difficulty Selector Dropdown -->
+    <div class="diff-selector-box">
+      <div class="diff-btn" id="currentDiffBtn" onclick="toggleDiffDropdown()">
+        <span id="currentDiffText">Easy</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+
+      <div class="diff-dropdown-menu" id="diffDropdownMenu">
+        <div class="diff-option selected" onclick="selectDifficulty('Easy')"><span>Easy (Micro Risk)</span> <span id="check-Easy">✔</span></div>
+        <div class="diff-option" onclick="selectDifficulty('Medium')"><span>Medium (Balanced)</span> <span id="check-Medium"></span></div>
+        <div class="diff-option" onclick="selectDifficulty('Hard')"><span>Hard (High Speed)</span> <span id="check-Hard"></span></div>
+        <div class="diff-option" onclick="selectDifficulty('Hardcore')"><span>Hardcore (Extreme)</span> <span id="check-Hardcore"></span></div>
+      </div>
+    </div>
+
+    <!-- Main Play / Cashout Button -->
+    <button class="play-btn" id="mainActionBtn" onclick="handleMainAction()">Play</button>
+  </div>
+</div>
+
+<script>
+  // Toast Helper
+  function showToast(msg, isError = false) {
+    const container = document.getElementById("toastContainer");
+    const toast = document.createElement("div");
+    toast.className = `app-toast ${isError ? 'error' : ''}`;
+    toast.innerHTML = `<span>${isError ? '⚠️' : '✅'}</span> <span>${msg}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 2500);
+  }
+
+  // Master Audio Control
+  let isMuted = localStorage.getItem("audio_muted") === "true";
+  let audioCtx = null;
+
+  function initAudio() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  function playTone(freq, type, dur) {
+    if (isMuted) return;
+    try {
+      initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.07, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + dur);
+    } catch(e) {}
+  }
+
+  const SOUNDS = {
+    step: () => playTone(650, 'triangle', 0.08),
+    cashout: () => {
+      playTone(523.25, 'sine', 0.1);
+      setTimeout(() => playTone(659.25, 'sine', 0.1), 80);
+      setTimeout(() => playTone(783.99, 'sine', 0.25), 160);
+    },
+    crash: () => {
+      playTone(180, 'sawtooth', 0.15);
+      setTimeout(() => playTone(110, 'sawtooth', 0.35), 80);
+    },
+    click: () => playTone(800, 'sine', 0.03)
+  };
+
+  function toggleGlobalAudio() {
+    isMuted = !isMuted;
+    localStorage.setItem("audio_muted", isMuted);
+    renderAudioIcon();
+  }
+
+  function renderAudioIcon() {
+    const el = document.getElementById("soundIcon");
+    if (isMuted) {
+      el.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff5252" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"/><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/></svg>`;
+    } else {
+      el.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>`;
+    }
+  }
+  renderAudioIcon();
+
+  // Multiplier Ladders for 8 Highway Steps
+  const DIFFICULTY_LADDERS = {
+    Easy: [1.01, 1.03, 1.06, 1.10, 1.15, 1.22, 1.32, 1.50],
+    Medium: [1.08, 1.18, 1.32, 1.50, 1.85, 2.30, 3.00, 4.20],
+    Hard: [1.20, 1.65, 2.50, 4.00, 7.50, 15.00, 30.00, 60.00],
+    Hardcore: [1.44, 2.20, 5.00, 12.00, 30.00, 100.00, 250.00, 1000.00]
+  };
+
+  // State Management
+  let balance = parseFloat(localStorage.getItem("global_balance") || "1000.54");
+  let isBalHidden = false;
+  let currentBet = 4;
+  let currentDiff = "Easy";
+  let inGame = false;
+  let currentStep = 0;
+  let chickenY = 160; // center road level
+
+  function updateBalanceDisplay() {
+    document.getElementById("userBalText").innerText = balance.toFixed(2);
+    document.getElementById("balHideText").innerText = isBalHidden ? "••••••" : `${balance.toFixed(2)} ETB`;
+    localStorage.setItem("global_balance", balance.toFixed(2));
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: "BALANCE_UPDATE", newBalance: balance }, "*");
+      }
+    } catch(e) {}
+  }
+  updateBalanceDisplay();
+
+  function toggleBalVisibility() {
+    isBalHidden = !isBalHidden;
+    updateBalanceDisplay();
+  }
+
+  // -------------------------------------------------------------
+  // 🚗 REAL CONTINUOUS TRAFFIC ENGINE (Canvas & Physics)
+  // -------------------------------------------------------------
+  const canvas = document.getElementById("roadCanvas");
+  const ctx = canvas.getContext("2d");
+
+  // Traffic Vehicles on 8 highway lanes
+  const vehicles = [];
+  const VEHICLE_STYLES = [
+    { type: "IceCream", color: "#42a5f5", length: 74, width: 44, hasCone: true },
+    { type: "FireTruck", color: "#e53935", length: 90, width: 46, hasLadder: true },
+    { type: "Taxi", color: "#fbc02d", length: 62, width: 42, hasRoofSign: true },
+    { type: "Sedan", color: "#8e24aa", length: 60, width: 40 }
+  ];
+
+  function initTrafficVehicles() {
+    vehicles.length = 0;
+    const speedMultiplier = currentDiff === "Easy" ? 1.0 : currentDiff === "Medium" ? 1.4 : currentDiff === "Hard" ? 2.0 : 2.6;
+
+    for (let lane = 1; lane <= 8; lane++) {
+      const laneCenterX = ((lane - 1) * 85) + (85 / 2);
+      const style = VEHICLE_STYLES[(lane - 1) % VEHICLE_STYLES.length];
+      const direction = lane % 2 === 0 ? 1 : -1; // alternate up/down traffic
+      const speed = (1.4 + (Math.random() * 1.2)) * speedMultiplier * direction;
+
+      vehicles.push({
+        lane: lane,
+        x: laneCenterX - (style.width / 2),
+        y: Math.random() * 380,
+        speed: speed,
+        style: style,
+        active: true
+      });
+    }
+  }
+  initTrafficVehicles();
+
+  function renderTrafficLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw Lane Dividing Dashed Lines
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([12, 12]);
+    for (let l = 1; l < 8; l++) {
+      ctx.beginPath();
+      ctx.moveTo(l * 85, 0);
+      ctx.lineTo(l * 85, canvas.height);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+
+    // Update & Draw Each Vehicle
+    vehicles.forEach(v => {
+      v.y += v.speed;
+
+      // Wrap around canvas edges
+      if (v.speed > 0 && v.y > canvas.height + 40) v.y = -v.style.length - 20;
+      if (v.speed < 0 && v.y < -v.style.length - 40) v.y = canvas.height + 20;
+
+      // Draw Top-Down Real Vehicle
+      ctx.save();
+      ctx.translate(v.x, v.y);
+
+      // Vehicle Body Box
+      ctx.fillStyle = v.style.color;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, v.style.width, v.style.length, 6);
+      ctx.fill();
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // Windshield & Rear Windows
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(4, 12, v.style.width - 8, 10);
+      ctx.fillRect(6, v.style.length - 16, v.style.width - 12, 8);
+
+      // Headlights / Taillights
+      if (v.speed > 0) {
+        ctx.fillStyle = "#ffeb3b";
+        ctx.fillRect(4, v.style.length - 4, 8, 3);
+        ctx.fillRect(v.style.width - 12, v.style.length - 4, 8, 3);
+      } else {
+        ctx.fillStyle = "#ffeb3b";
+        ctx.fillRect(4, 1, 8, 3);
+        ctx.fillRect(v.style.width - 12, 1, 8, 3);
+      }
+
+      // Special Roof Elements (Screenshot Accuracy)
+      if (v.style.hasCone) {
+        // Giant 3D Pink Ice Cream Cone on roof
+        ctx.fillStyle = "#ff4081";
+        ctx.beginPath();
+        ctx.arc(v.style.width / 2, v.style.length / 2, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#f59e0b";
+        ctx.beginPath();
+        ctx.moveTo((v.style.width / 2) - 8, (v.style.length / 2) + 6);
+        ctx.lineTo(v.style.width / 2, (v.style.length / 2) + 20);
+        ctx.lineTo((v.style.width / 2) + 8, (v.style.length / 2) + 6);
+        ctx.closePath();
+        ctx.fill();
+      } else if (v.style.hasLadder) {
+        ctx.fillStyle = "#cbd5e1";
+        ctx.fillRect((v.style.width / 2) - 5, 18, 10, v.style.length - 36);
+      }
+
+      ctx.restore();
+
+      // Real Collision Check with Chicken when standing on this lane
+      if (inGame && currentStep === v.lane) {
+        const chickenGlobalY = chickenY + 27; // center of chicken
+        const vehicleTop = v.y;
+        const vehicleBottom = v.y + v.style.length;
+
+        if (chickenGlobalY >= vehicleTop && chickenGlobalY <= vehicleBottom) {
+          triggerRealCrash(v);
+        }
+      }
+    });
+
+    requestAnimationFrame(renderTrafficLoop);
+  }
+  renderTrafficLoop();
+
+  // -------------------------------------------------------------
+  // 🕹️ GAMEPLAY ENGINE & STEP CONTROLLER
+  // -------------------------------------------------------------
+  function buildHighwayLanes() {
+    const strip = document.getElementById("highwayStrip");
+    strip.innerHTML = "";
+    const mults = DIFFICULTY_LADDERS[currentDiff];
+
+    for (let i = 1; i <= 8; i++) {
+      strip.innerHTML += `
+        <div class="lane-block" id="lane-${i}">
+          <div class="manhole-step" id="step-${i}" onclick="takeStep(${i})">
+            <div class="manhole-mult-text">${mults[i - 1]}x</div>
+            <div class="manhole-grate-lines"></div>
+            <div class="manhole-grate-lines"></div>
+          </div>
+        </div>
+      `;
+    }
+  }
+  buildHighwayLanes();
+
+  function handleMainAction() {
+    if (!inGame) {
+      if (currentBet > balance) return showToast("Insufficient balance!", true);
+      balance -= currentBet;
+      updateBalanceDisplay();
+      SOUNDS.step();
+
+      inGame = true;
+      currentStep = 0;
+      initTrafficVehicles();
+
+      document.getElementById("mainActionBtn").innerText = "Take Step 1";
+      document.getElementById("mainActionBtn").className = "play-btn cashout";
+      document.getElementById("step-1").classList.add("active-step");
+      document.getElementById("diffDropdownMenu").style.display = "none";
+      showToast(`Game started on ${currentDiff} mode!`);
+    } else {
+      if (currentStep > 0) {
+        executeCashout();
+      } else {
+        takeStep(1);
+      }
+    }
+  }
+
+  function takeStep(stepIndex) {
+    if (!inGame || stepIndex !== currentStep + 1) return;
+    SOUNDS.step();
+    currentStep = stepIndex;
+
+    // Jump Chicken to Lane Manhole Center
+    const chicken = document.getElementById("chickenPlayer");
+    const targetX = 100 + ((stepIndex - 1) * 85) + (85 / 2) - 27;
+    chicken.style.left = targetX + "px";
+    chicken.classList.add("waddle");
+    setTimeout(() => chicken.classList.remove("waddle"), 250);
+
+    // Scroll Arena smoothly to follow the chicken
+    document.getElementById("roadArenaScroll").scrollTo({ left: targetX - 140, behavior: 'smooth' });
+
+    // Mark previous manholes as passed
+    document.getElementById(`step-${stepIndex}`).classList.remove("active-step");
+    document.getElementById(`step-${stepIndex}`).classList.add("passed");
+
+    if (stepIndex < 8) {
+      document.getElementById(`step-${stepIndex + 1}`).classList.add("active-step");
+    }
+
+    const mult = DIFFICULTY_LADDERS[currentDiff][stepIndex - 1];
+    const liveWin = (currentBet * mult).toFixed(2);
+    document.getElementById("mainActionBtn").innerText = `Cash Out ${liveWin} ETB (${mult}x)`;
+
+    if (stepIndex === 8) {
+      setTimeout(() => executeCashout(), 350);
+    }
+  }
+
+  // Real Collision Trigger
+  function triggerRealCrash(vehicle) {
+    if (!inGame) return;
+    inGame = false;
+    SOUNDS.crash();
+
+    const chicken = document.getElementById("chickenPlayer");
+    chicken.style.transform = "rotate(90deg) scale(0.85)"; // splat effect
+
+    showToast(`💥 Smashed by oncoming ${vehicle.style.type}! Bet lost.`, true);
+
+    setTimeout(() => {
+      resetGameUI();
+    }, 1800);
+  }
+
+  function executeCashout() {
+    if (!inGame || currentStep === 0) return;
+    inGame = false;
+
+    const mult = DIFFICULTY_LADDERS[currentDiff][currentStep - 1];
+    const winAmt = Number((currentBet * mult).toFixed(2));
+    balance += winAmt;
+    updateBalanceDisplay();
+    SOUNDS.cashout();
+
+    showToast(`🎉 Cashed out @ ${mult.toFixed(2)}x! +${winAmt.toFixed(2)} ETB credited!`);
+    resetGameUI();
+  }
+
+  function resetGameUI() {
+    inGame = false;
+    currentStep = 0;
+
+    const chicken = document.getElementById("chickenPlayer");
+    chicken.style.left = "22px";
+    chicken.style.transform = "none";
+
+    document.getElementById("roadArenaScroll").scrollTo({ left: 0, behavior: 'smooth' });
+    buildHighwayLanes();
+
+    const btn = document.getElementById("mainActionBtn");
+    btn.className = "play-btn";
+    btn.innerText = "Play";
+  }
+
+  // -------------------------------------------------------------
+  // ⚙️ CONTROLS & DIFFICULTY SELECTOR
+  // -------------------------------------------------------------
+  function setBet(val) {
+    if (inGame) return;
+    SOUNDS.click();
+    currentBet = Math.min(balance > 0 ? balance : 100, val);
+    document.getElementById("betDisplayVal").innerText = currentBet;
+  }
+
+  function toggleDiffDropdown() {
+    if (inGame) return;
+    const menu = document.getElementById("diffDropdownMenu");
+    menu.style.display = menu.style.display === "block" ? "none" : "block";
+  }
+
+  function selectDifficulty(diff) {
+    currentDiff = diff;
+    document.getElementById("currentDiffText").innerText = diff;
+
+    document.querySelectorAll(".diff-option").forEach(el => el.classList.remove("selected"));
+    ["Easy", "Medium", "Hard", "Hardcore"].forEach(d => {
+      document.getElementById(`check-${d}`).innerText = d === diff ? "✔" : "";
+    });
+
+    buildHighwayLanes();
+    initTrafficVehicles();
+    document.getElementById("diffDropdownMenu").style.display = "none";
+    showToast(`Switched to ${diff} mode`);
+  }
+</script>
+</body>
+</html>
