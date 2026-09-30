@@ -3,535 +3,1325 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Chicken Road 2 - InOut Official Edition</title>
-  <!-- Telegram WebApp SDK -->
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <title>Chicken Road 2 - Hulu Bet</title>
   <style>
     :root {
-      --bg-dark: #121418;
-      --card-dark: #1e2229;
-      --border-color: #2b313a;
-      --accent-green: #00c853;
-      --accent-green-hover: #00e676;
-      --accent-gold: #ffb300;
-      --accent-red: #ff3344;
-      --asphalt-gray: #3a3e46;
-      --text-gray: #8c939e;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; -webkit-tap-highlight-color: transparent; }
-    html, body { width: 100%; height: 100%; background: #000; color: #fff; overflow: hidden; }
-    
-    .game-wrapper {
-      width: 100%; height: 100vh; background: var(--bg-dark);
-      display: flex; flex-direction: column; position: relative; margin: 0 auto; max-width: 480px;
+      --bg-dark: #1e2027;
+      --panel-bg: #262932;
+      --card-bg: #323643;
+      --card-border: #3f4555;
+      --green-btn: #3ec85a;
+      --green-shadow: #28a742;
+      --yellow-btn: #f7c343;
+      --yellow-shadow: #cfa12b;
+      --road-color: #63656c;
+      --sidewalk: #c0c4cd;
+      --grass: #84bf41;
+      --text-white: #ffffff;
+      --text-dim: #9aa1b3;
+      --traffic-duration: 6.5s; /* Easy default */
     }
 
-    /* 1. Header */
-    .brand-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 8px 12px; background: #121418; border-bottom: 1px solid #1c1f26; z-index: 50; flex-shrink: 0;
-    }
-    .chicken-logo { font-size: 19px; font-weight: 900; color: #fff; letter-spacing: -0.5px; display: flex; align-items: center; gap: 4px; }
-    .chicken-logo span { color: var(--accent-red); font-size: 21px; font-style: italic; }
-    
-    .header-right-meta { display: flex; align-items: center; gap: 8px; }
-    .bal-pill {
-      background: #1c1f26; border: 1px solid #2d3239; border-radius: 12px;
-      padding: 4px 10px; font-size: 12px; font-weight: 900; color: var(--accent-green);
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
     }
 
-    /* 2. Road Arena with Continuous Traffic */
-    .road-arena {
-      flex: 1; min-height: 0; background: var(--asphalt-gray); position: relative;
-      overflow-x: auto; overflow-y: hidden; display: flex; scrollbar-width: none;
-    }
-    .road-arena::-webkit-scrollbar { display: none; }
-
-    /* Sidewalk Start Area */
-    .sidewalk-start {
-      width: 95px; height: 100%; background: #7e8188; border-right: 4px solid #5b5d63;
-      position: relative; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-around; padding-left: 10px; z-index: 10;
-    }
-    .bush { width: 44px; height: 44px; border-radius: 50%; background: #43a047; border: 3px solid #2e7d32; }
-
-    /* Traffic Canvas */
-    #roadCanvas { position: absolute; top: 0; left: 95px; width: 680px; height: 100%; z-index: 15; pointer-events: none; }
-
-    /* Chicken Sprite */
-    .chicken-sprite {
-      width: 48px; height: 48px; position: absolute; top: 150px; left: 24px;
-      z-index: 30; transition: left 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    .chicken-sprite.waddle { animation: waddleAnim 0.2s infinite alternate; }
-
-    /* Highway Lanes with Manhole Covers */
-    .highway-strip { display: flex; height: 100%; position: relative; padding-left: 95px; padding-right: 80px; z-index: 20; }
-    .lane-block {
-      width: 85px; height: 100%; position: relative; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; flex-shrink: 0;
+    body {
+      background: #111216;
+      color: var(--text-white);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
     }
 
-    .manhole-step {
-      width: 64px; height: 64px; border-radius: 50%; background: radial-gradient(circle, #686c75 0%, #36383d 100%);
-      border: 3px solid #25272b; box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), 0 4px 10px rgba(0,0,0,0.6);
-      display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s;
+    #game-app {
+      width: 100%;
+      max-width: 480px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      background: var(--bg-dark);
+      overflow: hidden;
     }
-    .manhole-step.active-step {
-      border-color: var(--accent-green); box-shadow: 0 0 16px var(--accent-green); animation: pulseStep 0.8s infinite alternate;
-    }
-    .manhole-step.passed { background: radial-gradient(circle, #2e7d32 0%, #1b5e20 100%); border-color: #4caf50; }
-    .manhole-mult-text { font-size: 13px; font-weight: 900; color: #fff; text-shadow: 0 1px 2px #000; }
-    .manhole-grate-lines { width: 30px; height: 2px; background: #222326; margin-top: 3px; border-radius: 2px; }
 
-    /* 3. Bottom Controls Panel */
-    .controls-panel {
-      background: #1a1d22; border-top: 1px solid var(--border-color); padding: 8px 12px 12px;
-      display: flex; flex-direction: column; gap: 6px; z-index: 50; flex-shrink: 0;
+    /* Top Bar */
+    header {
+      height: 50px;
+      background: #242731;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      z-index: 30;
+      border-bottom: 1px solid #1a1c23;
     }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .logo-text {
+      font-weight: 900;
+      font-size: 1.15rem;
+      letter-spacing: -0.5px;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+    }
+    .logo-badge {
+      background: #ef4444;
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: 4px;
+      margin: 0 3px;
+    }
+    .logo-star {
+      width: 14px;
+      height: 14px;
+      margin-left: 2px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .balance-pill {
+      background: #393e4d;
+      border-radius: 18px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 700;
+      font-size: 0.88rem;
+    }
+    .balance-coin {
+      width: 18px;
+      height: 18px;
+      background: #f59e0b;
+      color: #fff;
+      border-radius: 50%;
+      font-size: 0.55rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+    }
+
+    /* Game World Viewport */
+    #world-viewport {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: var(--road-color);
+    }
+
+    #world-track {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      display: flex;
+      transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    /* Sidewalk / Grass Start */
+    .sidewalk-area {
+      width: 140px;
+      height: 100%;
+      background: var(--sidewalk);
+      position: relative;
+      border-right: 4px solid #9499a5;
+      flex-shrink: 0;
+    }
+    .grass-strip {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 48px;
+      background: var(--grass);
+      border-right: 3px solid #6b9e30;
+    }
+    .bush {
+      position: absolute;
+      background: #669a2d;
+      border-radius: 50%;
+    }
+    .lamp-post {
+      position: absolute;
+      left: 60px;
+      top: 70px;
+      z-index: 5;
+    }
+    .lamp-glow {
+      position: absolute;
+      left: 30px;
+      top: 40px;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(254, 240, 138, 0.45) 0%, rgba(254, 240, 138, 0) 70%);
+      pointer-events: none;
+      z-index: 4;
+    }
+
+    /* Lanes & Continual Traffic */
+    .lane {
+      width: 130px;
+      height: 100%;
+      position: relative;
+      border-right: 3px dashed rgba(255, 255, 255, 0.65);
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+
+    .traffic-car-container {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      z-index: 8;
+      top: -200px;
+    }
+
+    /* Continuous driving loop */
+    .driving-active {
+      animation: driveDown var(--traffic-duration) linear infinite;
+    }
+
+    @keyframes driveDown {
+      0% { top: -200px; }
+      100% { top: 110%; }
+    }
+
+    /* Blocked vehicle stopped behind barricade */
+    .traffic-car-container.blocked-by-barrier {
+      animation: none !important;
+      top: 25px !important;
+      transition: top 0.4s ease-out;
+    }
+
+    /* Crash hit animation */
+    .traffic-car-container.speed-crash {
+      animation: none !important;
+      transition: top 0.12s cubic-bezier(0.5, 0, 1, 1) !important;
+      top: 220px !important;
+    }
+
+    /* Barricade (Safety Breaker) */
+    .lane-barricade {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%) translateY(-30px);
+      top: 145px;
+      width: 96px;
+      z-index: 9;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .lane-barricade.deployed {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Manhole Covers */
+    .manhole {
+      position: absolute;
+      bottom: 115px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 92px;
+      height: 92px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #55575e 0%, #3e4046 70%, #282a2e 100%);
+      border: 3px solid #6f7179;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.6), 0 4px 8px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+    .manhole-bars {
+      position: absolute;
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      border: 2px solid #5a5c64;
+      opacity: 0.6;
+    }
+    .manhole-mult {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #e5e7eb;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      z-index: 3;
+    }
+    .manhole.passed {
+      opacity: 0.45;
+    }
+
+    /* Real Chicken Entity */
+    #chicken {
+      position: absolute;
+      bottom: 130px;
+      left: 70px;
+      width: 78px;
+      height: 78px;
+      z-index: 20;
+      transform: translate(-50%, 0);
+      transition: left 0.35s cubic-bezier(0.34, 1.4, 0.64, 1), bottom 0.25s ease-out;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .chicken-img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 6px 8px rgba(0,0,0,0.35));
+      animation: chickenIdle 1.2s infinite ease-in-out;
+    }
+    @keyframes chickenIdle {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-4px) scale(1.02); }
+    }
+
+    /* Chicken Step Multiplier Tooltip */
+    #mult-bubble {
+      position: absolute;
+      bottom: -32px;
+      background: #2b3952;
+      border: 2px solid #3b82f6;
+      border-radius: 7px;
+      padding: 2px 9px;
+      font-size: 0.85rem;
+      font-weight: 900;
+      color: #fff;
+      white-space: nowrap;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      display: none;
+    }
+    #mult-bubble::before {
+      content: "";
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-bottom: 6px solid #3b82f6;
+    }
+
+    /* Win Celebration Pill */
+    #win-pill {
+      position: absolute;
+      top: 25px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.8);
+      background: #276749;
+      border: 2px solid #38a169;
+      border-radius: 20px;
+      padding: 6px 20px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    #win-pill.show {
+      transform: translateX(-50%) scale(1);
+      opacity: 1;
+    }
+    .win-tag {
+      background: #f6c343;
+      color: #000;
+      font-weight: 900;
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 10px;
+      margin-bottom: 2px;
+      text-transform: uppercase;
+    }
+    .win-val {
+      font-size: 1.15rem;
+      font-weight: 900;
+      color: #fff;
+    }
+
+    /* Pure SVG Error Toast */
+    #toast {
+      position: absolute;
+      top: 58px;
+      right: 12px;
+      background: #ef4444;
+      color: #fff;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+      z-index: 100;
+      transform: translateY(-20px);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+    #toast.show {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .toast-icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+      fill: #ffffff;
+    }
+    .toast-close {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      margin-left: 4px;
+    }
+
+    /* Bottom Control Panel */
+    #control-panel {
+      background: var(--panel-bg);
+      border-top-left-radius: 20px;
+      border-top-right-radius: 20px;
+      padding: 16px 14px 20px;
+      box-shadow: 0 -6px 20px rgba(0,0,0,0.4);
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Row 1: Bet Stepper */
     .stepper-row {
-      display: flex; align-items: center; justify-content: space-between; background: #252a32; border-radius: 6px; padding: 3px;
+      background: var(--card-bg);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 44px;
+      padding: 3px 6px;
     }
-    .btn-limit { background: #323842; border: none; color: #fff; font-size: 11px; font-weight: 900; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
-    .bet-amount-display { font-size: 16px; font-weight: 900; color: #fff; }
+    .step-btn {
+      background: #2b2e38;
+      border: none;
+      color: var(--text-dim);
+      font-weight: 800;
+      font-size: 0.78rem;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .step-btn:active {
+      background: #393d4a;
+    }
+    .bet-input-box {
+      background: transparent;
+      border: none;
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.15rem;
+      text-align: center;
+      width: 100px;
+      outline: none;
+    }
 
-    .quick-chips-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+    /* Row 2: Quick Chips */
+    .chips-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
     .chip-btn {
-      background: #252a32; border: 1px solid #323842; border-radius: 6px; padding: 6px 0;
-      color: #fff; font-size: 11px; font-weight: 800; text-align: center; cursor: pointer;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 8px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+    .chip-btn:active {
+      background: #414757;
+    }
+    .chip-sub {
+      background: #4b5263;
+      font-size: 0.6rem;
+      padding: 1px 4px;
+      border-radius: 6px;
+      color: #cbd5e1;
     }
 
-    /* Difficulty Selector Dropdown */
-    .diff-selector-box { position: relative; }
-    .diff-btn {
-      width: 100%; background: #252a32; border: 1px solid #323842; border-radius: 6px;
-      padding: 8px 12px; color: #fff; font-size: 12px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; cursor: pointer;
+    /* Row 3: Difficulty Dropdown */
+    .dropdown-container {
+      position: relative;
     }
-    .diff-dropdown-menu {
-      display: none; position: absolute; bottom: 100%; left: 0; right: 0; background: #252a32;
-      border: 1px solid #3c434f; border-radius: 6px; overflow: hidden; margin-bottom: 4px; box-shadow: 0 -8px 20px rgba(0,0,0,0.6); z-index: 60;
+    .dropdown-trigger {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
     }
-    .diff-option {
-      padding: 9px 12px; font-size: 12px; font-weight: bold; color: #ddd; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #323842;
+    .dropdown-arrow {
+      width: 12px;
+      height: 12px;
+      fill: var(--text-dim);
+      transition: transform 0.2s ease;
     }
-    .diff-option:hover { background: #323842; color: #fff; }
-    .diff-option.selected { color: var(--accent-gold); }
+    .dropdown-menu {
+      position: absolute;
+      bottom: 50px;
+      left: 0;
+      right: 0;
+      background: #23262f;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      z-index: 60;
+    }
+    .dropdown-menu.open {
+      display: flex;
+    }
+    .dropdown-item {
+      padding: 12px 16px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      border-bottom: 1px solid #2d313c;
+    }
+    .dropdown-item:last-child {
+      border-bottom: none;
+    }
+    .dropdown-item:active {
+      background: #313542;
+    }
+    .dropdown-item.active {
+      color: #f59e0b;
+    }
 
-    /* Action Play / Cash Out Button */
-    .play-btn {
-      width: 100%; background: var(--accent-green); color: #fff; font-size: 17px; font-weight: 900;
-      border: none; border-radius: 8px; padding: 12px 0; cursor: pointer; transition: 0.15s; letter-spacing: 0.5px;
+    /* Row 4: Action Buttons */
+    .actions-row {
+      position: relative;
+      height: 56px;
     }
-    .play-btn.cashout { background: var(--accent-gold); color: #000; animation: pulsePlay 0.8s infinite alternate; }
-
-    /* Floating Win Banner */
-    .clean-win-banner {
-      position: fixed; top: 12px; left: 50%; transform: translateX(-50%);
-      background: linear-gradient(135deg, #00c853, #00e676); color: #000; font-size: 13px; font-weight: 900;
-      padding: 8px 20px; border-radius: 30px; box-shadow: 0 6px 25px rgba(0, 230, 118, 0.6);
-      z-index: 9999; display: none; animation: popWin 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    .big-btn {
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      border: none;
+      font-size: 1.3rem;
+      font-weight: 900;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: transform 0.05s ease;
+    }
+    .big-btn:active {
+      transform: translateY(2px);
+    }
+    .btn-play {
+      background: var(--green-btn);
+      color: #ffffff;
+      box-shadow: 0 5px 0 var(--green-shadow);
     }
 
-    @keyframes pulseStep { 0% { transform: scale(1); } 100% { transform: scale(1.08); } }
-    @keyframes pulsePlay { 0% { transform: scale(0.99); } 100% { transform: scale(1.02); } }
-    @keyframes waddleAnim { 0% { transform: rotate(-8deg); } 100% { transform: rotate(8deg); } }
-    @keyframes popWin { 0% { transform: translate(-50%, -20px) scale(0.8); opacity: 0; } 100% { transform: translate(-50%, 0) scale(1); opacity: 1; } }
+    /* Dual In-Game Buttons */
+    .ingame-btns {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      height: 100%;
+    }
+    .btn-cashout {
+      background: var(--yellow-btn);
+      color: #111;
+      box-shadow: 0 5px 0 var(--yellow-shadow);
+      flex-direction: column;
+      font-size: 0.95rem;
+      line-height: 1.15;
+    }
+    .btn-cashout span {
+      font-size: 1.05rem;
+      font-weight: 900;
+    }
+    .btn-go {
+      background: var(--green-btn);
+      color: #ffffff;
+      box-shadow: 0 5px 0 var(--green-shadow);
+      font-size: 1.35rem;
+    }
+
+    .btn-disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
 
-<div class="game-wrapper">
-  <!-- Clean Win Banner -->
-  <div class="clean-win-banner" id="cleanWinBanner">
-    🎉 <span id="winBannerText">+0.00 ETB Cashed Out!</span>
-  </div>
-
-  <!-- 1. Header -->
-  <div class="brand-header">
-    <div class="chicken-logo">CHICKEN <span>2</span> ROAD</div>
-    <div class="header-right-meta">
-      <div class="bal-pill"><span id="userBalText">0.00</span> ETB</div>
+<div id="game-app">
+  <!-- Top Bar -->
+  <header>
+    <div class="logo-container">
+      <div class="logo-text">
+        CHICKEN <span class="logo-badge">2</span> R
+        <svg class="logo-star" viewBox="0 0 24 24" fill="#f59e0b">
+          <circle cx="12" cy="12" r="10" stroke="#f59e0b" stroke-width="2" fill="none"/>
+          <path d="M12 2L15 9L22 9L16 14L18 21L12 17L6 21L8 14L2 9L9 9Z"/>
+        </svg>
+        AD
+      </div>
     </div>
-  </div>
+    <div class="header-right">
+      <div class="balance-pill">
+        <span id="bal-text">0.00</span>
+        <div class="balance-coin">ETB</div>
+      </div>
 
-  <!-- 2. Road Scene Visual Area -->
-  <div class="road-arena" id="roadArenaScroll">
-    <canvas id="roadCanvas" width="680" height="380"></canvas>
+      <!-- Pure SVG Chat Icon (No Emoji) -->
+      <button class="icon-btn" title="Chat">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </button>
 
-    <!-- Sidewalk Start Area -->
-    <div class="sidewalk-start">
-      <div class="bush"></div>
-      <div class="bush"></div>
+      <!-- Pure SVG Hamburger Icon (No Emoji) -->
+      <button class="icon-btn" title="Menu">
+        <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/>
+          <line x1="3" y1="12" x2="21" y2="12"/>
+          <line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
     </div>
+  </header>
 
-    <!-- Chicken Character (SVG) -->
-    <div class="chicken-sprite" id="chickenPlayer">
-      <svg viewBox="0 0 100 100" width="100%" height="100%">
-        <ellipse cx="45" cy="55" rx="35" ry="30" fill="#ffffff" stroke="#d5d5d5" stroke-width="3"/>
-        <path d="M40,25 Q35,10 48,18 Q55,8 60,22 Z" fill="#ff3344"/>
-        <circle cx="55" cy="35" r="9" fill="#fff" stroke="#333" stroke-width="2"/><circle cx="58" cy="35" r="4" fill="#000"/>
-        <polygon points="68,42 85,48 68,54" fill="#ffb300" stroke="#e65100" stroke-width="1.5"/>
-        <ellipse cx="35" cy="58" rx="16" ry="12" fill="#f0f0f0" stroke="#ccc" stroke-width="2"/>
-        <path d="M35,82 L35,92 M30,92 L40,92 M50,82 L50,92 M45,92 L55,92" stroke="#ffb300" stroke-width="4" stroke-linecap="round"/>
+  <!-- Error Toast with Pure SVG Alert and Close -->
+  <div id="toast">
+    <svg class="toast-icon" viewBox="0 0 24 24">
+      <path d="M12 2L1 21h22L12 2zm0 3.5L20 19H4L12 5.5zM11 10v4h2v-4h-2zm0 6v2h2v-2h-2z"/>
+    </svg>
+    <span id="toast-msg">Insufficient funds</span>
+    <span class="toast-close" onclick="hideToast()">
+      <svg width="14" height="14" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3" stroke-linecap="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
       </svg>
-    </div>
-
-    <!-- 8 Highway Lanes with Manholes -->
-    <div class="highway-strip" id="highwayStrip"></div>
+    </span>
   </div>
 
-  <!-- 3. Bottom Controls Panel -->
-  <div class="controls-panel">
+  <!-- Game Canvas / World Viewport -->
+  <div id="world-viewport">
+    <!-- Win Floating Banner -->
+    <div id="win-pill">
+      <div class="win-tag">WIN!</div>
+      <div class="win-val" id="win-amount">0.00 ETB</div>
+    </div>
+
+    <!-- Scrolling Track -->
+    <div id="world-track">
+      <!-- Sidewalk Start Lane -->
+      <div class="sidewalk-area">
+        <div class="grass-strip">
+          <div class="bush" style="width:34px; height:34px; top:30px; left:8px;"></div>
+          <div class="bush" style="width:40px; height:40px; top:190px; left:4px;"></div>
+          <div class="bush" style="width:30px; height:30px; top:290px; left:10px;"></div>
+        </div>
+        <div class="lamp-glow"></div>
+        <!-- SVG Street Lamp -->
+        <svg class="lamp-post" width="46" height="120" viewBox="0 0 46 120">
+          <path d="M12,120 L12,30 Q12,6 30,6 L38,6" fill="none" stroke="#6b7280" stroke-width="6" stroke-linecap="round"/>
+          <ellipse cx="12" cy="116" rx="10" ry="4" fill="#4b5563"/>
+          <path d="M30,6 L44,14 L36,18 Z" fill="#9ca3af"/>
+          <polygon points="34,16 44,14 40,24" fill="#fde047" opacity="0.9"/>
+        </svg>
+      </div>
+
+      <!-- Road Lanes Container -->
+      <div id="lanes-box" style="display:flex;"></div>
+    </div>
+
+    <!-- Chicken Entity with Your Provided PNG -->
+    <div id="chicken">
+      <img src="https://i.postimg.cc/FzfP0m6N/20260930-163717.png" alt="Chicken" class="chicken-img" id="chicken-sprite">
+      <div id="mult-bubble">1.03x</div>
+    </div>
+  </div>
+
+  <!-- Bottom Control Panel -->
+  <div id="control-panel">
     <!-- Stepper Row -->
     <div class="stepper-row">
-      <button class="btn-limit" onclick="setBet(4)">MIN</button>
-      <div class="bet-amount-display"><span id="betDisplayVal">4</span> ETB</div>
-      <button class="btn-limit" onclick="setBet(100)">MAX</button>
+      <button class="step-btn" onclick="setBet('MIN')">MIN</button>
+      <input type="number" id="bet-input" class="bet-input-box" value="4" min="1" max="1000" step="1">
+      <button class="step-btn" onclick="setBet('MAX')">MAX</button>
     </div>
 
-    <!-- Quick Chips Row -->
-    <div class="quick-chips-row">
-      <div class="chip-btn" onclick="setBet(4)">4 ETB</div>
-      <div class="chip-btn" onclick="setBet(8)">8 ETB</div>
-      <div class="chip-btn" onclick="setBet(12)">12 ETB</div>
-      <div class="chip-btn" onclick="setBet(20)">20 ETB</div>
+    <!-- Quick Bet Chips -->
+    <div class="chips-row">
+      <button class="chip-btn" onclick="setQuickBet(4)">4 <span class="chip-sub">ETB</span></button>
+      <button class="chip-btn" onclick="setQuickBet(8)">8 <span class="chip-sub">ETB</span></button>
+      <button class="chip-btn" onclick="setQuickBet(12)">12 <span class="chip-sub">ETB</span></button>
+      <button class="chip-btn" onclick="setQuickBet(20)">20 <span class="chip-sub">ETB</span></button>
     </div>
 
-    <!-- Difficulty Selector Dropdown -->
-    <div class="diff-selector-box">
-      <div class="diff-btn" id="currentDiffBtn" onclick="toggleDiffDropdown()">
-        <span id="currentDiffText">Easy</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+    <!-- Difficulty Selector with Pure SVG Arrows & Checks -->
+    <div class="dropdown-container" id="diff-box">
+      <div class="dropdown-trigger" onclick="toggleDropdown()">
+        <span id="diff-label">Easy</span>
+        <svg class="dropdown-arrow" viewBox="0 0 24 24">
+          <path d="M7 10l5 5 5-5z"/>
+        </svg>
       </div>
-
-      <div class="diff-dropdown-menu" id="diffDropdownMenu">
-        <div class="diff-option selected" onclick="selectDifficulty('Easy')"><span>Easy (Low Risk)</span> <span id="check-Easy">✔</span></div>
-        <div class="diff-option" onclick="selectDifficulty('Medium')"><span>Medium (Balanced)</span> <span id="check-Medium"></span></div>
-        <div class="diff-option" onclick="selectDifficulty('Hard')"><span>Hard (High Risk)</span> <span id="check-Hard"></span></div>
-        <div class="diff-option" onclick="selectDifficulty('Hardcore')"><span>Hardcore (Extreme)</span> <span id="check-Hardcore"></span></div>
+      <div class="dropdown-menu" id="diff-menu">
+        <div class="dropdown-item active" onclick="selectDifficulty('Easy')">
+          <span>Easy</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="3" fill="none"><path d="M4 12l5 5L20 6"/></svg>
+        </div>
+        <div class="dropdown-item" onclick="selectDifficulty('Medium')">
+          <span>Medium</span>
+          <span></span>
+        </div>
+        <div class="dropdown-item" onclick="selectDifficulty('Hard')">
+          <span>Hard</span>
+          <span></span>
+        </div>
+        <div class="dropdown-item" onclick="selectDifficulty('Hardcore')">
+          <span>Hardcore</span>
+          <span></span>
+        </div>
       </div>
     </div>
 
-    <!-- Main Play / Cash Out Button -->
-    <button class="play-btn" id="mainActionBtn" onclick="handleMainAction()">Play</button>
+    <!-- Action Buttons -->
+    <div class="actions-row">
+      <button id="btn-play" class="big-btn btn-play" onclick="handlePlayClick()">Play</button>
+      <div id="ingame-btns" class="ingame-btns">
+        <button id="btn-cashout" class="big-btn btn-cashout" onclick="handleCashOut()">
+          <div>CASH OUT</div>
+          <span id="cashout-val">0.00 ETB</span>
+        </button>
+        <button id="btn-go" class="big-btn btn-go" onclick="handleGoStep()">GO</button>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
-  // ============================================================================
-  // 🚀 CHICKEN ROAD 2 - INTEGRATED WITH HULU BET RENDER BACKEND (/api/bet/play)
-  // ============================================================================
-  const RENDER_BASE_URL = "https://hulubet-server.onrender.com";
+/* ==========================================================================
+   1. MANDATORY BOILERPLATE & SERVER COMMUNICATION
+   ========================================================================== */
+const API = "https://hulubet-server.onrender.com";
+let INIT_DATA = "", serverBalance = 0, ready = false;
 
-  // URL Injection: User ID & Balance from Main Lobby
-  const urlParams = new URLSearchParams(window.location.search);
-  let USER_ID = urlParams.get('userId') || "589218392";
-  let balance = parseFloat(urlParams.get('balance')) || 20.00;
-
-  function triggerCleanWin(msg) {
-    const banner = document.getElementById("cleanWinBanner");
-    document.getElementById("winBannerText").innerText = msg;
-    banner.style.display = "block";
-    setTimeout(() => { banner.style.display = "none"; }, 3500);
-  }
-
-  // Audio Synthesizer
-  let audioCtx = null;
-  function initAudio() { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
-  function playTone(freq, type, dur) {
-    try {
-      initAudio();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.start(); osc.stop(audioCtx.currentTime + dur);
-    } catch(e) {}
-  }
-  const SOUNDS = {
-    step: () => playTone(650, 'triangle', 0.08),
-    cashout: () => { playTone(523, 'sine', 0.1); setTimeout(() => playTone(659, 'sine', 0.1), 80); setTimeout(() => playTone(783, 'sine', 0.25), 160); },
-    crash: () => playTone(140, 'sawtooth', 0.3),
-    click: () => playTone(800, 'sine', 0.03)
-  };
-
-  // Multiplier Ladders for 8 Highway Steps
-  const DIFFICULTY_LADDERS = {
-    Easy: [1.02, 1.05, 1.10, 1.18, 1.28, 1.45, 1.70, 2.10],
-    Medium: [1.10, 1.25, 1.45, 1.75, 2.20, 2.90, 4.00, 6.00],
-    Hard: [1.25, 1.70, 2.60, 4.20, 8.00, 16.00, 35.00, 75.00],
-    Hardcore: [1.44, 2.20, 5.00, 12.00, 30.00, 100.00, 250.00, 1000.00]
-  };
-
-  let currentBet = 4;
-  let currentDiff = "Easy";
-  let inGame = false;
-  let currentStep = 0;
-  let serverMaxSafeStep = 8;
-  let serverBetResult = null;
-
-  function updateBalanceDisplay() {
-    document.getElementById("userBalText").innerText = balance.toFixed(2);
-    try {
-      if (window.parent && window.parent !== window) {
-        window.parent.postMessage({ type: "BALANCE_UPDATE", newBalance: balance }, "*");
+async function api(path, opts = {}) {
+  try {
+    const r = await fetch(API + path, {
+      ...opts,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-telegram-init-data': INIT_DATA
       }
-    } catch(e) {}
+    });
+    return await r.json();
+  } catch (e) {
+    return { success: false, message: 'Connection problem' };
   }
-  updateBalanceDisplay();
+}
+const postParent = m => { try { parent.postMessage(m, '*'); } catch (e) {} };
 
-  // Handshake with Lobby
-  if (window.parent && window.parent !== window) {
-    window.parent.postMessage({ type: "GAME_READY" }, "*");
+addEventListener('message', e => {
+  if (e.source !== parent) return;
+  const d = e.data || {};
+  if (d.type === 'INIT' && d.initData) {
+    INIT_DATA = d.initData;
+    ready = true;
+    refreshBalance();
   }
-  window.addEventListener('message', (e) => {
-    if (e.data?.type === 'INIT_BALANCE' || e.data?.type === 'UPDATE_BALANCE') {
-      if (e.data.balance !== undefined) { balance = parseFloat(e.data.balance); updateBalanceDisplay(); }
-      if (e.data.userId) USER_ID = String(e.data.userId);
-    }
+  if (d.type === 'UPDATE_BALANCE') refreshBalance();
+});
+postParent({ type: 'GAME_READY' });
+
+async function refreshBalance() {
+  const d = await api('/api/user/init');
+  if (d.success) {
+    serverBalance = d.balance;
+    showBalance();
+  }
+}
+function showBalance() {
+  document.getElementById('bal-text').textContent = Number(serverBalance).toFixed(2);
+  postParent({ type: 'BALANCE_UPDATE', newBalance: serverBalance });
+}
+
+/* ==========================================================================
+   2. PROCEDURAL WEB AUDIO (WITH REALISTIC CHICKEN SQUAWK SOUND)
+   ========================================================================== */
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playTone(freq, type = 'sine', duration = 0.12, gainVal = 0.25) {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+  gain.gain.setValueAtTime(gainVal, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+const soundHop = () => {
+  playTone(520, 'sine', 0.08, 0.25);
+  setTimeout(() => playTone(680, 'sine', 0.1, 0.2), 40);
+};
+
+const soundWin = () => {
+  [523, 659, 783, 1046].forEach((f, i) => setTimeout(() => playTone(f, 'triangle', 0.22, 0.3), i * 75));
+};
+
+// Realistic Chicken Screech / Squawk when hit by a car
+const soundChickenSquawk = () => {
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const now = audioCtx.currentTime;
+
+  // 1. Car Horn Blare
+  const horn1 = audioCtx.createOscillator();
+  const horn2 = audioCtx.createOscillator();
+  const hornGain = audioCtx.createGain();
+  horn1.type = 'sawtooth';
+  horn2.type = 'sawtooth';
+  horn1.frequency.setValueAtTime(370, now);
+  horn2.frequency.setValueAtTime(466, now);
+  hornGain.gain.setValueAtTime(0.3, now);
+  hornGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+  horn1.connect(hornGain);
+  horn2.connect(hornGain);
+  hornGain.connect(audioCtx.destination);
+  horn1.start(now);
+  horn2.start(now);
+  horn1.stop(now + 0.45);
+  horn2.stop(now + 0.45);
+
+  // 2. High-Pitched Chicken Scream ("BAAWWWK!")
+  const squawkOsc = audioCtx.createOscillator();
+  const squawkGain = audioCtx.createGain();
+  squawkOsc.type = 'sawtooth';
+  // Rapid pitch bend dropping from 1200Hz down to 350Hz
+  squawkOsc.frequency.setValueAtTime(1150, now + 0.05);
+  squawkOsc.frequency.exponentialRampToValueAtTime(320, now + 0.48);
+
+  // Vibrato modulation for alarmed flutter
+  const lfo = audioCtx.createOscillator();
+  const lfoGain = audioCtx.createGain();
+  lfo.frequency.setValueAtTime(35, now);
+  lfoGain.gain.setValueAtTime(140, now);
+  lfo.connect(squawkOsc.frequency);
+  lfo.start(now + 0.05);
+  lfo.stop(now + 0.5);
+
+  squawkGain.gain.setValueAtTime(0.001, now);
+  squawkGain.gain.linearRampToValueAtTime(0.5, now + 0.08);
+  squawkGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+  squawkOsc.connect(squawkGain);
+  squawkGain.connect(audioCtx.destination);
+  squawkOsc.start(now + 0.05);
+  squawkOsc.stop(now + 0.5);
+};
+
+/* ==========================================================================
+   3. MULTIPLIERS & SPEED PER DIFFICULTY
+   ========================================================================== */
+const MULTIPLIERS = {
+  Easy:     [1.01, 1.03, 1.06, 1.10, 1.15, 1.22, 1.30, 1.44, 1.62, 1.90, 2.25, 2.80],
+  Medium:   [1.05, 1.15, 1.30, 1.55, 1.95, 2.60, 3.60, 5.20, 8.00, 13.0, 22.0, 40.0],
+  Hard:     [1.18, 1.50, 2.10, 3.20, 5.50, 10.0, 20.0, 45.0, 100.0, 250.0],
+  Hardcore: [1.50, 2.50, 5.00, 12.0, 30.0, 80.0, 250.0, 800.0]
+};
+
+// Continuous Traffic Durations (Easy = slow, Hardcore = very fast)
+const TRAFFIC_SPEEDS = {
+  Easy: '6.5s',
+  Medium: '4.2s',
+  Hard: '2.6s',
+  Hardcore: '1.5s'
+};
+
+let currentDifficulty = 'Easy';
+let activeRound = null;
+let currentStepIndex = 0; // 0 = on sidewalk
+
+/* ==========================================================================
+   4. SVG VEHICLES & BARRICADE TEMPLATES
+   ========================================================================== */
+function getYellowTruckSvg() {
+  return `
+    <svg width="80" height="150" viewBox="0 0 80 150">
+      <rect x="6" y="24" width="68" height="120" rx="6" fill="#1e293b"/>
+      <rect x="8" y="26" width="64" height="60" rx="4" fill="#0f172a"/>
+      <text x="40" y="60" fill="#f59e0b" font-weight="900" font-size="12" text-anchor="middle" font-family="sans-serif">iN OUT</text>
+      <!-- Cab -->
+      <rect x="10" y="86" width="60" height="54" rx="8" fill="#f59e0b"/>
+      <rect x="16" y="92" width="48" height="22" rx="4" fill="#38bdf8"/>
+      <circle cx="20" cy="136" r="4" fill="#fef08a"/>
+      <circle cx="60" cy="136" r="4" fill="#fef08a"/>
+      <!-- Side Mirrors -->
+      <rect x="4" y="94" width="6" height="10" rx="2" fill="#475569"/>
+      <rect x="70" y="94" width="6" height="10" rx="2" fill="#475569"/>
+    </svg>`;
+}
+
+function getFireEngineSvg() {
+  return `
+    <svg width="76" height="160" viewBox="0 0 76 160">
+      <rect x="8" y="10" width="60" height="140" rx="8" fill="#dc2626"/>
+      <rect x="14" y="112" width="48" height="20" rx="4" fill="#93c5fd"/>
+      <circle cx="18" cy="106" r="4" fill="#3b82f6"/>
+      <circle cx="58" cy="106" r="4" fill="#3b82f6"/>
+      <rect x="24" y="18" width="28" height="80" rx="2" fill="#cbd5e1" stroke="#475569" stroke-width="2"/>
+      <line x1="24" y1="32" x2="52" y2="32" stroke="#475569" stroke-width="2"/>
+      <line x1="24" y1="46" x2="52" y2="46" stroke="#475569" stroke-width="2"/>
+      <line x1="24" y1="60" x2="52" y2="60" stroke="#475569" stroke-width="2"/>
+      <line x1="24" y1="74" x2="52" y2="74" stroke="#475569" stroke-width="2"/>
+      <line x1="24" y1="88" x2="52" y2="88" stroke="#475569" stroke-width="2"/>
+      <rect x="12" y="142" width="52" height="8" rx="2" fill="#e2e8f0"/>
+    </svg>`;
+}
+
+function getIceCreamTruckSvg() {
+  return `
+    <svg width="76" height="150" viewBox="0 0 76 150">
+      <rect x="8" y="16" width="60" height="124" rx="8" fill="#38bdf8"/>
+      <rect x="8" y="16" width="60" height="40" rx="4" fill="#f472b6"/>
+      <rect x="14" y="100" width="48" height="20" rx="4" fill="#bae6fd"/>
+      <rect x="12" y="130" width="52" height="6" rx="2" fill="#cbd5e1"/>
+    </svg>`;
+}
+
+function getBarricadeSvg() {
+  return `
+    <svg width="96" height="50" viewBox="0 0 96 50">
+      <rect x="4" y="6" width="88" height="24" rx="4" fill="#f59e0b"/>
+      <path d="M12,6 L22,30 M32,6 L42,30 M52,6 L62,30 M72,6 L82,30" stroke="#1f2937" stroke-width="6"/>
+      <rect x="16" y="28" width="8" height="18" fill="#9ca3af"/>
+      <rect x="72" y="28" width="8" height="18" fill="#9ca3af"/>
+      <rect x="10" y="44" width="20" height="5" rx="2" fill="#6b7280"/>
+      <rect x="66" y="44" width="20" height="5" rx="2" fill="#6b7280"/>
+    </svg>`;
+}
+
+/* ==========================================================================
+   5. TRACK & LANES GENERATION
+   ========================================================================== */
+function buildTrack() {
+  const lanesBox = document.getElementById('lanes-box');
+  lanesBox.innerHTML = '';
+  const mults = MULTIPLIERS[currentDifficulty];
+
+  // Set current speed CSS variable
+  document.documentElement.style.setProperty('--traffic-duration', TRAFFIC_SPEEDS[currentDifficulty]);
+
+  mults.forEach((m, idx) => {
+    const laneDiv = document.createElement('div');
+    laneDiv.className = 'lane';
+    laneDiv.id = `lane-${idx}`;
+
+    // Select car type alternating
+    const carTypes = [getYellowTruckSvg(), getFireEngineSvg(), getIceCreamTruckSvg()];
+    const chosenCar = carTypes[idx % carTypes.length];
+
+    // Stagger animation delay across lanes
+    const animDelay = -(idx * 1.35) % 4;
+
+    laneDiv.innerHTML = `
+      <!-- Moving Traffic Vehicle -->
+      <div class="traffic-car-container driving-active" id="traffic-${idx}" style="animation-delay: ${animDelay}s;">
+        ${chosenCar}
+      </div>
+
+      <!-- Safety Barricade (Braker) -->
+      <div class="lane-barricade" id="barricade-${idx}">
+        ${getBarricadeSvg()}
+      </div>
+
+      <!-- Manhole Step -->
+      <div class="manhole" id="manhole-${idx}">
+        <div class="manhole-bars"></div>
+        <div class="manhole-mult">${m.toFixed(2)}x</div>
+      </div>
+    `;
+    lanesBox.appendChild(laneDiv);
+  });
+}
+
+/* ==========================================================================
+   6. CONTROLS & DROPDOWN (NO EMOJIS)
+   ========================================================================== */
+function setBet(type) {
+  const input = document.getElementById('bet-input');
+  if (type === 'MIN') input.value = 1;
+  if (type === 'MAX') input.value = Math.min(1000, Math.floor(serverBalance) || 1000);
+}
+function setQuickBet(val) {
+  document.getElementById('bet-input').value = val;
+}
+
+function toggleDropdown() {
+  if (activeRound) return;
+  document.getElementById('diff-menu').classList.toggle('open');
+}
+
+function selectDifficulty(diff) {
+  currentDifficulty = diff;
+  document.getElementById('diff-label').textContent = diff;
+  document.querySelectorAll('.dropdown-item').forEach(el => {
+    const isTarget = el.textContent.includes(diff);
+    el.classList.toggle('active', isTarget);
+    el.children[1].innerHTML = isTarget 
+      ? `<svg width="14" height="14" viewBox="0 0 24 24" stroke="#f59e0b" stroke-width="3" fill="none"><path d="M4 12l5 5L20 6"/></svg>` 
+      : '';
+  });
+  document.getElementById('diff-menu').classList.remove('open');
+  buildTrack();
+  resetChickenPosition();
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  toast.classList.add('show');
+  setTimeout(hideToast, 4000);
+}
+function hideToast() {
+  document.getElementById('toast').classList.remove('show');
+}
+
+/* ==========================================================================
+   7. CHICKEN MOVEMENT & BARRICADE (BRAKER) LOGIC
+   ========================================================================== */
+function resetChickenPosition() {
+  const chicken = document.getElementById('chicken');
+  const bubble = document.getElementById('mult-bubble');
+  chicken.style.left = '70px';
+  chicken.style.bottom = '130px';
+  chicken.style.transform = 'translate(-50%, 0)';
+  chicken.style.filter = 'none';
+  bubble.style.display = 'none';
+  document.getElementById('world-track').style.transform = 'translateX(0px)';
+  document.getElementById('win-pill').classList.remove('show');
+
+  // Clear barricades & restore traffic
+  document.querySelectorAll('.lane-barricade').forEach(b => b.classList.remove('deployed'));
+  document.querySelectorAll('.traffic-car-container').forEach(c => {
+    c.classList.remove('blocked-by-barrier', 'speed-crash');
+    c.classList.add('driving-active');
+  });
+}
+
+function positionChickenAtStep(stepIdx) {
+  const chicken = document.getElementById('chicken');
+  const bubble = document.getElementById('mult-bubble');
+  const viewport = document.getElementById('world-viewport');
+  const mults = MULTIPLIERS[currentDifficulty];
+
+  soundHop();
+
+  // Lane position (sidewalk is 140px, each lane is 130px)
+  const targetX = 140 + stepIdx * 130 + 65;
+  chicken.style.left = targetX + 'px';
+  chicken.style.bottom = '135px';
+
+  // Multiplier bubble update
+  const m = mults[stepIdx] || mults[mults.length - 1];
+  bubble.textContent = `${m.toFixed(2)}x`;
+  bubble.style.display = 'block';
+
+  // Dim passed manhole
+  const mh = document.getElementById(`manhole-${stepIdx}`);
+  if (mh) mh.classList.add('passed');
+
+  // DEPLOY BARRICADE (BRAKER) TO PROTECT CHICKEN FROM INCOMING CARS
+  const barricade = document.getElementById(`barricade-${stepIdx}`);
+  if (barricade) {
+    barricade.classList.add('deployed');
+  }
+
+  // STOP INCOMING CAR AT BARRICADE
+  const trafficCar = document.getElementById(`traffic-${stepIdx}`);
+  if (trafficCar) {
+    trafficCar.classList.remove('driving-active');
+    trafficCar.classList.add('blocked-by-barrier');
+  }
+
+  // Camera tracking
+  const viewportWidth = viewport.clientWidth;
+  const cameraX = Math.max(0, targetX - viewportWidth / 2);
+  document.getElementById('world-track').style.transform = `translateX(-${cameraX}px)`;
+}
+
+/* ==========================================================================
+   8. GAMEPLAY ACTIONS (SERVER AUTHORITATIVE)
+   ========================================================================== */
+async function handlePlayClick() {
+  if (activeRound) return;
+
+  const bet = parseFloat(document.getElementById('bet-input').value) || 0;
+  if (bet < 1 || bet > 1000) {
+    showToast("Bet must be between 1 and 1000 ETB");
+    return;
+  }
+  if (bet > serverBalance) {
+    showToast("Insufficient funds");
+    postParent({ type: 'OPEN_DEPOSIT' });
+    return;
+  }
+
+  const playBtn = document.getElementById('btn-play');
+  playBtn.classList.add('btn-disabled');
+  playBtn.textContent = "Connecting...";
+
+  // 1. Authoritative bet API call
+  const res = await api('/api/bet/play', {
+    method: 'POST',
+    body: JSON.stringify({
+      gameName: "ChickenRoad2",
+      betAmount: bet,
+      clientData: { difficulty: currentDifficulty }
+    })
   });
 
-  // -------------------------------------------------------------
-  // 🚗 CONTINUOUS TRAFFIC CANVAS ENGINE
-  // -------------------------------------------------------------
-  const canvas = document.getElementById("roadCanvas");
-  const ctx = canvas.getContext("2d");
-  const vehicles = [];
-  const VEHICLE_STYLES = [
-    { type: "Sedan", color: "#42a5f5", length: 62, width: 40 },
-    { type: "FireTruck", color: "#e53935", length: 85, width: 44 },
-    { type: "Taxi", color: "#fbc02d", length: 60, width: 40 },
-    { type: "Police", color: "#8e24aa", length: 62, width: 40 }
-  ];
+  playBtn.classList.remove('btn-disabled');
+  playBtn.textContent = "Play";
 
-  function initTraffic() {
-    vehicles.length = 0;
-    const speedMult = currentDiff === "Easy" ? 1.0 : currentDiff === "Medium" ? 1.3 : 1.8;
-    for (let lane = 1; lane <= 8; lane++) {
-      const laneX = ((lane - 1) * 85) + (85 / 2);
-      const style = VEHICLE_STYLES[(lane - 1) % VEHICLE_STYLES.length];
-      const dir = lane % 2 === 0 ? 1 : -1;
-      vehicles.push({
-        lane: lane,
-        x: laneX - (style.width / 2),
-        y: Math.random() * 380,
-        speed: (1.5 + Math.random() * 1.0) * speedMult * dir,
-        style: style
-      });
+  if (!res.success) {
+    showToast(res.message || "Failed to place bet");
+    if (res.message && res.message.toLowerCase().includes("balance")) {
+      postParent({ type: 'OPEN_DEPOSIT' });
     }
+    return;
   }
-  initTraffic();
 
-  function renderTraffic() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Local deduction for instant response; authoritative balance follows
+  serverBalance -= bet;
+  showBalance();
+  postParent({ type: 'BET_STARTED' });
 
-    // Dashed lines
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.25)";
-    ctx.lineWidth = 2;
-    ctx.setLineDash([10, 10]);
-    for (let l = 1; l < 8; l++) {
-      ctx.beginPath(); ctx.moveTo(l * 85, 0); ctx.lineTo(l * 85, canvas.height); ctx.stroke();
-    }
-    ctx.setLineDash([]);
+  // 2. Active round setup
+  currentStepIndex = 0;
+  buildTrack();
+  resetChickenPosition();
 
-    // Vehicles
-    vehicles.forEach(v => {
-      v.y += v.speed;
-      if (v.speed > 0 && v.y > canvas.height + 40) v.y = -v.style.length - 20;
-      if (v.speed < 0 && v.y < -v.style.length - 40) v.y = canvas.height + 20;
+  activeRound = {
+    betAmount: bet,
+    isWin: res.isWin,
+    payout: res.payout,
+    multiplier: res.multiplier,
+    newBalance: res.newBalance,
+    maxSafeStep: (res.visualOutcome && typeof res.visualOutcome.maxSafeStep === 'number')
+                   ? res.visualOutcome.maxSafeStep
+                   : (res.isWin ? MULTIPLIERS[currentDifficulty].length : 0)
+  };
 
-      ctx.save();
-      ctx.translate(v.x, v.y);
-      ctx.fillStyle = v.style.color;
-      ctx.beginPath(); ctx.roundRect(0, 0, v.style.width, v.style.length, 6); ctx.fill();
-      ctx.strokeStyle = "#fff"; ctx.lineWidth = 1; ctx.stroke();
-      // Windshield
-      ctx.fillStyle = "#1e293b"; ctx.fillRect(4, 10, v.style.width - 8, 8);
-      ctx.restore();
-    });
+  // Switch to in-game buttons
+  document.getElementById('btn-play').style.display = 'none';
+  document.getElementById('ingame-btns').style.display = 'grid';
+  document.getElementById('diff-box').style.pointerEvents = 'none';
+  document.getElementById('diff-box').style.opacity = '0.7';
 
-    requestAnimationFrame(renderTraffic);
-  }
-  renderTraffic();
+  updateCashOutLabel();
+}
 
-  // -------------------------------------------------------------
-  // 🕹️ GAMEPLAY ENGINE (Calls Render Server /api/bet/play)
-  // -------------------------------------------------------------
-  function buildHighwayLanes() {
-    const strip = document.getElementById("highwayStrip");
-    strip.innerHTML = "";
-    const mults = DIFFICULTY_LADDERS[currentDiff];
+function updateCashOutLabel() {
+  const mults = MULTIPLIERS[currentDifficulty];
+  const curMult = currentStepIndex > 0 ? mults[currentStepIndex - 1] : 1.00;
+  const currentPayout = (activeRound.betAmount * curMult).toFixed(2);
+  document.getElementById('cashout-val').textContent = `${currentPayout} ETB`;
+}
 
-    for (let i = 1; i <= 8; i++) {
-      strip.innerHTML += `
-        <div class="lane-block" id="lane-${i}">
-          <div class="manhole-step" id="step-${i}" onclick="takeStep(${i})">
-            <div class="manhole-mult-text">${mults[i - 1]}x</div>
-            <div class="manhole-grate-lines"></div>
-            <div class="manhole-grate-lines"></div>
-          </div>
-        </div>
-      `;
-    }
-  }
-  buildHighwayLanes();
+function handleGoStep() {
+  if (!activeRound) return;
 
-  async function handleMainAction() {
-    if (!inGame) {
-      if (currentBet > balance) {
-        if (window.parent && window.parent !== window) window.parent.postMessage({ type: "OPEN_DEPOSIT" }, "*");
-        return;
-      }
+  const goBtn = document.getElementById('btn-go');
+  const cashBtn = document.getElementById('btn-cashout');
+  goBtn.classList.add('btn-disabled');
+  cashBtn.classList.add('btn-disabled');
 
-      balance -= currentBet;
-      updateBalanceDisplay();
-      SOUNDS.step();
+  const nextStep = currentStepIndex;
+  const mults = MULTIPLIERS[currentDifficulty];
 
-      inGame = true;
-      currentStep = 0;
+  // If safe according to server result:
+  if (nextStep < activeRound.maxSafeStep && nextStep < mults.length) {
+    positionChickenAtStep(nextStep);
+    currentStepIndex++;
+    updateCashOutLabel();
 
-      // Consult Render Server Engine for ChickenRoad2
-      try {
-        const res = await fetch(`${RENDER_BASE_URL}/api/bet/play`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: USER_ID,
-            gameName: "ChickenRoad2",
-            betAmount: currentBet,
-            clientData: { difficulty: currentDiff }
-          })
-        });
-        const d = await res.json();
-        if (d.success) {
-          serverBetResult = d;
-          serverMaxSafeStep = d.visualOutcome?.maxSafeStep || (d.isWin ? 8 : 3);
-        } else {
-          serverMaxSafeStep = 2;
-        }
-      } catch(e) {
-        serverMaxSafeStep = 4;
-      }
-
-      document.getElementById("mainActionBtn").innerText = "Take Step 1";
-      document.getElementById("mainActionBtn").className = "play-btn cashout";
-      document.getElementById("step-1").classList.add("active-step");
-      document.getElementById("diffDropdownMenu").style.display = "none";
-    } else {
-      if (currentStep > 0) {
-        executeCashout();
+    setTimeout(() => {
+      // Reached finish successfully!
+      if (currentStepIndex >= mults.length || (currentStepIndex >= activeRound.maxSafeStep && activeRound.isWin)) {
+        completeWin();
       } else {
-        takeStep(1);
+        goBtn.classList.remove('btn-disabled');
+        cashBtn.classList.remove('btn-disabled');
       }
+    }, 350);
+
+  } else {
+    // Loss: No barricade drops, vehicle crashes into chicken!
+    triggerCarCrash(nextStep);
+  }
+}
+
+function handleCashOut() {
+  if (!activeRound) return;
+  if (activeRound.isWin) {
+    completeWin();
+  } else {
+    triggerCarCrash(currentStepIndex);
+  }
+}
+
+function triggerCarCrash(laneIdx) {
+  soundChickenSquawk();
+
+  const chicken = document.getElementById('chicken');
+  const viewport = document.getElementById('world-viewport');
+  const targetX = 140 + laneIdx * 130 + 65;
+
+  // Hop into danger lane
+  chicken.style.left = targetX + 'px';
+
+  // NO BARRICADE DEPLOYS ON CRASH!
+  // Car speeds directly down into the chicken
+  const trafficCar = document.getElementById(`traffic-${laneIdx}`);
+  if (trafficCar) {
+    trafficCar.classList.remove('driving-active');
+    trafficCar.classList.add('speed-crash');
+  }
+
+  // Crash animation on chicken
+  setTimeout(() => {
+    chicken.style.transform = 'translate(-50%, 15px) rotate(90deg) scale(0.85)';
+    chicken.style.filter = 'grayscale(1) brightness(0.7)';
+  }, 100);
+
+  showToast("Hit by car! Round Over");
+
+  setTimeout(() => {
+    endRound(activeRound.newBalance);
+  }, 1700);
+}
+
+function completeWin() {
+  soundWin();
+  const winPill = document.getElementById('win-pill');
+  document.getElementById('win-amount').textContent = `${Number(activeRound.payout).toFixed(2)} ETB`;
+  winPill.classList.add('show');
+
+  const chicken = document.getElementById('chicken');
+  chicken.style.bottom = '160px';
+
+  setTimeout(() => {
+    endRound(activeRound.newBalance);
+  }, 2200);
+}
+
+function endRound(authoritativeBalance) {
+  serverBalance = authoritativeBalance;
+  showBalance();
+  postParent({ type: 'BET_ENDED' });
+
+  activeRound = null;
+  currentStepIndex = 0;
+
+  // Reset controls
+  document.getElementById('btn-play').style.display = 'flex';
+  document.getElementById('ingame-btns').style.display = 'none';
+  document.getElementById('btn-go').classList.remove('btn-disabled');
+  document.getElementById('btn-cashout').classList.remove('btn-disabled');
+  document.getElementById('diff-box').style.pointerEvents = 'auto';
+  document.getElementById('diff-box').style.opacity = '1';
+
+  resetChickenPosition();
+}
+
+/* Initialize Game on Load */
+window.addEventListener('load', () => {
+  buildTrack();
+  resetChickenPosition();
+
+  // Close dropdown on outside tap
+  document.addEventListener('click', e => {
+    if (!document.getElementById('diff-box').contains(e.target)) {
+      document.getElementById('diff-menu').classList.remove('open');
     }
-  }
-
-  function takeStep(stepIndex) {
-    if (!inGame || stepIndex !== currentStep + 1) return;
-    SOUNDS.step();
-    currentStep = stepIndex;
-
-    const chicken = document.getElementById("chickenPlayer");
-    const targetX = 95 + ((stepIndex - 1) * 85) + (85 / 2) - 24;
-    chicken.style.left = targetX + "px";
-    chicken.classList.add("waddle");
-    setTimeout(() => chicken.classList.remove("waddle"), 220);
-
-    // Auto-scroll track
-    document.getElementById("roadArenaScroll").scrollTo({ left: targetX - 140, behavior: 'smooth' });
-
-    // Server-enforced Crash Check
-    if (stepIndex > serverMaxSafeStep) {
-      triggerRoadCrash();
-      return;
-    }
-
-    document.getElementById(`step-${stepIndex}`).classList.remove("active-step");
-    document.getElementById(`step-${stepIndex}`).classList.add("passed");
-
-    if (stepIndex < 8) {
-      document.getElementById(`step-${stepIndex + 1}`).classList.add("active-step");
-    }
-
-    const mult = DIFFICULTY_LADDERS[currentDiff][stepIndex - 1];
-    const liveWin = (currentBet * mult).toFixed(2);
-    document.getElementById("mainActionBtn").innerText = `CASH OUT ${liveWin} ETB (${mult}x)`;
-
-    if (stepIndex === 8) {
-      setTimeout(() => executeCashout(), 350);
-    }
-  }
-
-  function triggerRoadCrash() {
-    inGame = false;
-    SOUNDS.crash();
-
-    const chicken = document.getElementById("chickenPlayer");
-    chicken.style.transform = "rotate(90deg) scale(0.85)";
-
-    triggerCleanWin(`💥 Smashed on Lane ${currentStep}! Bet lost.`);
-    setTimeout(() => { resetGameUI(); }, 1800);
-  }
-
-  function executeCashout() {
-    if (!inGame || currentStep === 0) return;
-    inGame = false;
-
-    const mult = DIFFICULTY_LADDERS[currentDiff][currentStep - 1];
-    const winAmt = Number((currentBet * mult).toFixed(2));
-    balance += winAmt;
-    if (serverBetResult && serverBetResult.newBalance && currentStep === 8) {
-      balance = serverBetResult.newBalance;
-    }
-
-    updateBalanceDisplay();
-    SOUNDS.cashout();
-    triggerCleanWin(`🎉 +${winAmt.toFixed(2)} ETB Cashed Out @ ${mult.toFixed(2)}x!`);
-    resetGameUI();
-  }
-
-  function resetGameUI() {
-    inGame = false;
-    currentStep = 0;
-    const chicken = document.getElementById("chickenPlayer");
-    chicken.style.left = "24px";
-    chicken.style.transform = "none";
-
-    document.getElementById("roadArenaScroll").scrollTo({ left: 0, behavior: 'smooth' });
-    buildHighwayLanes();
-
-    const btn = document.getElementById("mainActionBtn");
-    btn.className = "play-btn";
-    btn.innerText = "Play";
-  }
-
-  function setBet(val) {
-    if (inGame) return;
-    SOUNDS.click();
-    currentBet = Math.min(balance > 0 ? balance : 100, val);
-    document.getElementById("betDisplayVal").innerText = currentBet;
-  }
-
-  function toggleDiffDropdown() {
-    if (inGame) return;
-    const menu = document.getElementById("diffDropdownMenu");
-    menu.style.display = menu.style.display === "block" ? "none" : "block";
-  }
-
-  function selectDifficulty(diff) {
-    currentDiff = diff;
-    document.getElementById("currentDiffText").innerText = diff;
-    document.querySelectorAll(".diff-option").forEach(el => el.classList.remove("selected"));
-    ["Easy", "Medium", "Hard", "Hardcore"].forEach(d => {
-      document.getElementById(`check-${d}`).innerText = d === diff ? "✔" : "";
-    });
-    buildHighwayLanes();
-    initTraffic();
-    document.getElementById("diffDropdownMenu").style.display = "none";
-  }
+  });
+});
 </script>
 </body>
 </html>
